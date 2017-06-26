@@ -1,0 +1,142 @@
+{% extends 'goods_base.html' %}
+{% block title %}
+	<title>天天生鲜-购物车</title>
+{% endblock title %}
+{% block head%}
+<script>
+	$(function(){
+//	    # 页面加载全选
+		function checkother(){
+			if($('#all_check').is(":checked")){
+				$('.checkbox').prop('checked',true)
+			}
+			else{
+			    $('.checkbox').prop('checked',false)
+			}
+		}
+
+		//		价格跟新
+		function pricechange(){
+		    var sum = 0;
+			var count = 0;
+		    $('.col07').each(function(){
+		    	var gcount = parseInt($(this).prev().children().children('input').val());
+				var gprice = parseFloat($(this).attr('price'));
+				var gprice_all = parseFloat((gcount*gprice));
+				$(this).html(gprice_all.toFixed(2)+'元');
+				sum += gprice_all
+				count++;
+        	})
+			$('.sum_price').html(sum.toFixed(2));
+			$('.g_count').html(count);
+		}
+		checkother()
+		pricechange()
+		$('#all_check').click(function(){
+		    checkother()
+		})
+
+//		单个商品点击事件
+		$('.checkbox').click(function(){
+		    if($(this).prop('checked')){
+		        if($(':checked').length == $('.checkbox').length){
+		            $('#all_check').prop('checked', true)
+				}
+			}
+			else{
+		        $('#all_check').prop('checked', false)
+			}
+		})
+
+//		商品数量添加
+		$('.add').click(function(){
+		    var val = parseInt($(this).next().val()) + 1;
+		    $(this).next().val(val).blur()
+		})
+		$('.minus').click(function(){
+		    var val = parseInt($(this).prev().val()) - 1;
+		    $(this).prev().val(val).blur()
+		})
+		$('.num_show').blur(function(){
+		    count = parseInt($(this).val())
+			if(count <=0){
+		        $(this).val(0)
+				alert('请输入正确数量')
+			}
+			if(count > 100){
+		        $(this).val(100)
+				alert('最大数量为100')
+			}
+			pricechange();
+			var cart_id = $(this).parents('.cart_list_td').attr('id');
+			$.get('/edit_'+cart_id+'_'+count+"/",function(res){
+			    if(res.code==1){
+			        pricechange()
+				}
+				else{
+			        $(this).val($(this).val())
+				}
+				console.log('ok')
+			})
+		})
+//		删除商品
+		$('.del_cart').click(function () {
+			var cartid = $(this).parents('.cart_list_td').prop('id');
+			$.get('/del_'+cartid, function(res){
+			    if(res.code == 1){
+			        $('ul').remove('#'+cartid);
+			        pricechange()
+				}
+			})
+        })
+//		结算按钮
+		$('.prlce_cart').click(function(){
+			var carts = ''
+			$('.cart_list_td').each(function(){
+			    carts += 'cart_id='+$(this).prop('id')+'&'
+			})
+			$(this).attr('href','/orders/?'+carts)
+		})
+	})
+</script>
+{% endblock head%}
+{% block body %}
+<form action="" enctype="multipart/form-data"></form>
+	<div class="total_count">全部商品<em class="g_count">2</em>件</div>
+	<ul class="cart_list_th clearfix">
+		<li class="col01">商品名称</li>
+		<li class="col02">商品单位</li>
+		<li class="col03">商品价格</li>
+		<li class="col04">数量</li>
+		<li class="col05">小计</li>
+		<li class="col06">操作</li>
+	</ul>
+	{% for item in carts %}
+	<ul class="cart_list_td clearfix" id="{{item.id}}">
+		<li class="col01"><input type="checkbox" name="" class="checkbox"></li>
+		<li class="col02"><img src="/static/images/{{item.cGoods.gimg}}"></li>
+		<li class="col03">{{item.cGoods.gtitle}}<br><em>{{item.cGoods.gprice}}元/{{item.cGoods.gunit}}</em></li>
+		<li class="col04">{{item.cGoods.gunit}}</li>
+		<li class="col05" >{{item.cGoods.gprice}}元</li>
+		<li class="col06">
+			<div class="num_add">
+				<a href="javascript:;" class="add fl">+</a>
+				<input type="text" class="num_show fl" value="{{item.cCount}}">
+				<a href="javascript:;" class="minus fl">-</a>
+			</div>
+		</li>
+		<li class="col07" price="{{item.cGoods.gprice}}">{{item.cGoods.gprice}}元</li>
+		<li class="col08"><a href="javascript:;" class="del_cart">删除</a></li>
+	</ul>
+	{% endfor %}
+	<ul class="settlements">
+		<li class="col01"><input type="checkbox" name="" checked  id="all_check"></li>
+		<li class="col02">全选</li>
+		<li class="col03">合计(不含运费)：<span>¥</span><em class="sum_price">42.60</em><br>共计<b class="g_count">2</b>件商品</li>
+		<li class="col04"><a href="javasciprt:;" class="prlce_cart">去结算</a></li>
+	</ul>
+{% endblock body %}
+{% block footer %}
+	{% include 'footer.html' %}
+{% endblock footer %}
+{% block script %}{% endblock script %}
